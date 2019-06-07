@@ -31,6 +31,11 @@ from datetime import datetime
 import matplotlib.dates as mdates
 from pandas.plotting import _converter
 import subprocess
+from tkinter import Tk, Label, Button, Entry, StringVar, END
+from tkinter.filedialog import askopenfilename
+import os.path
+from tkinter import messagebox
+
 
 
 
@@ -651,53 +656,119 @@ def make_observation():
     return "A evolução histórica do caudal noturno registou um aumento de consumo no reservatório na noite do dia 8 de maio de 2019, tendo o caudal médio diário acompanhado esta tendência."
 
 
-def main():
-    
-    global entidade
-    entidade="Município de Penacova"
-    
-    global local
-    local="Reservatório da Aveleira "
-    
-    global canal
-    canal="example canal"
-    
-    global ramais
-    ramais=0
-   
-    global km_de_conduta
-    km_de_conduta=0
-    
-    global csvPath
-    
-    global detailed
+
+def showGUI():
     
     _converter.register()
     
-    #For now only Ramais and km de conduta are inserted by command line. If they are both different from 0 a detailed report is built
-    values_from_input= input("Insert Ramais, Km de conduta (separated from ',') or press enter \n")
-
-    if values_from_input is not None and values_from_input.__len__()!=0:
-        inputs=values_from_input.split(",")
-        ramais=int(inputs[0])
-        km_de_conduta=int(inputs[1])
-        
-    if ramais==0 or km_de_conduta==0:
-        readCsv(csvPath)
-        make_simple_report("Relatório_semanal_"+entidade+"_pdf.pdf",True)
-        make_simple_report("Relatório_semanal_"+entidade+"_png.pdf",False)
-        
-    else:
-        detailed=True
-        readCsv(csvPath)
-        make_detailed_report("Relatório_semanal_"+entidade+"_pdf.pdf",True)
-        make_detailed_report("Relatório_semanal_"+entidade+"_png.pdf",False)
-        
-    subprocess.Popen(["Relatório_semanal_"+entidade+"_pdf.pdf"], shell=True)
+    window = Tk()
+    window.title("Wada Report Generator")
+    window.geometry('600x600')
+ 
+    csvPath_lbl = Label(window, text="File csv")
+    csvPath_lbl.grid(column=0, row=0)
+    csv_default_text = StringVar(window, value='test3.csv')
+    csvPath_txt = Entry(window,width=30, textvariable=csv_default_text)
+    csvPath_txt.grid(column=1, row=0)
+    
+    browse_file_btn = Button(window, text="Browse File", command=lambda:OpenFile(csvPath_txt))
+    
+    browse_file_btn.grid(column=2 ,row=0)
     
 
+    entidade_lbl = Label(window, text="Entidade")
+    entidade_lbl.grid(column=0, row=1)
+    entidade_default_text = StringVar(window, value="Município de Penacova")
+    entidade_txt = Entry(window,width=30, textvariable=entidade_default_text)
+    entidade_txt.grid(column=1, row=1)
 
 
+    local_lbl = Label(window, text="Local")
+    local_lbl.grid(column=0, row=2)
+    local_default_text = StringVar(window, value="Reservatório da Aveleira ")
+    local_txt = Entry(window,width=30, textvariable=local_default_text)
+    local_txt.grid(column=1, row=2)
+
+
+    canal_lbl = Label(window, text="Canal")
+    canal_lbl.grid(column=0, row=3)
+    canal_default_text = StringVar(window, value="example canal")
+    canal_txt = Entry(window,width=30, textvariable=canal_default_text)
+    canal_txt.grid(column=1, row=3)
+
+
+    ramais_lbl = Label(window, text="Ramais")
+    ramais_lbl.grid(column=0, row=4)
+    ramais_default_text = StringVar(window, value='2')
+    ramais_txt = Entry(window,width=30, textvariable=ramais_default_text)
+    ramais_txt.grid(column=1, row=4)
+
+
+    km_de_conduta_lbl = Label(window, text="Km de conduta")
+    km_de_conduta_lbl.grid(column=0, row=5)
+    km_de_conduta_default_text = StringVar(window, value='10')
+    km_de_conduta_txt = Entry(window,width=30, textvariable=km_de_conduta_default_text)
+    km_de_conduta_txt.grid(column=1, row=5)
+
+
+    btn = Button(window, text="Generate", command=lambda:generate(csvPath_txt.get(),entidade_txt.get(), local_txt.get(),canal_txt.get(), int(ramais_txt.get()),int(km_de_conduta_txt.get())))
+    btn.grid(column=2, row=5)
+    
+    window.protocol("WM_DELETE_WINDOW", on_closing)
+    window.mainloop()
+
+def on_closing():
+    exit()
+    
+def OpenFile(csv_path_txt):
+    name = askopenfilename(filetypes =(("Text File", "*.csv"),("All Files","*.*")),
+                           title = "Choose a file."
+                           )
+    csv_path_txt.delete(0, END) #deletes the current value
+    csv_path_txt.insert(0, name)
+    
+    
+
+def generate(_csvPath,_entidade, _local, _canal, _ramais, _km_de_conduta):
+    global detailed
+    
+    global csvPath
+    csvPath=_csvPath
+    
+    global entidade
+    entidade=_entidade
+    
+    global local
+    local=_local
+    
+    global canal
+    canal=_canal
+    
+    global ramais
+    ramais=_ramais
+    
+    global km_de_conduta
+    km_de_conduta=_km_de_conduta
+    
+    if csvPath=="" or entidade=="" or local=="" or canal=="":
+         messagebox.showinfo("Error", "Fill in the mandatory fields")
+    else:
+        if os.path.exists(csvPath):
+                    
+             if ramais==0 or km_de_conduta==0:
+                 readCsv(csvPath)
+                 make_simple_report("Relatório_semanal_"+entidade+"_pdf.pdf",True)
+                 make_simple_report("Relatório_semanal_"+entidade+"_png.pdf",False)
+        
+             else:
+                detailed=True
+                readCsv(csvPath)
+                make_detailed_report("Relatório_semanal_"+entidade+"_pdf.pdf",True)
+                make_detailed_report("Relatório_semanal_"+entidade+"_png.pdf",False)
+        
+             subprocess.Popen(["Relatório_semanal_"+entidade+"_pdf.pdf"], shell=True)
+        else:
+            messagebox.showinfo("Error", "Insert a valid path for the csv file")
 
 
 if __name__ == "__main__":
@@ -717,5 +788,5 @@ if __name__ == "__main__":
     pesquisa_ramais_data=PlotData([],[])
     pesquisa_km_data=PlotData([],[])
    
-    main()
-    
+    #main()
+    showGUI()
