@@ -37,10 +37,6 @@ import os.path
 from tkinter import messagebox
 
 
-
-
-
-
 def form_xo_reader(imgdata):
     page, = PdfReader(imgdata).pages
     return pagexobj(page)
@@ -663,9 +659,9 @@ def showGUI():
     
     window = Tk()
     window.title("Wada Report Generator")
-    window.geometry('600x600')
+    window.geometry('350x150')
  
-    csvPath_lbl = Label(window, text="File csv")
+    csvPath_lbl = Label(window, text="File csv", background = '#335469', foreground = "white")
     csvPath_lbl.grid(column=0, row=0)
     csv_default_text = StringVar(window, value='test3.csv')
     csvPath_txt = Entry(window,width=30, textvariable=csv_default_text)
@@ -676,45 +672,46 @@ def showGUI():
     browse_file_btn.grid(column=2 ,row=0)
     
 
-    entidade_lbl = Label(window, text="Entidade")
+    entidade_lbl = Label(window, text="Entidade", background = '#335469', foreground = "white")
     entidade_lbl.grid(column=0, row=1)
     entidade_default_text = StringVar(window, value="Município de Penacova")
     entidade_txt = Entry(window,width=30, textvariable=entidade_default_text)
     entidade_txt.grid(column=1, row=1)
 
 
-    local_lbl = Label(window, text="Local")
+    local_lbl = Label(window, text="Local", background = '#335469', foreground = "white")
     local_lbl.grid(column=0, row=2)
     local_default_text = StringVar(window, value="Reservatório da Aveleira ")
     local_txt = Entry(window,width=30, textvariable=local_default_text)
     local_txt.grid(column=1, row=2)
 
 
-    canal_lbl = Label(window, text="Canal")
+    canal_lbl = Label(window, text="Canal", background = '#335469', foreground = "white")
     canal_lbl.grid(column=0, row=3)
     canal_default_text = StringVar(window, value="example canal")
     canal_txt = Entry(window,width=30, textvariable=canal_default_text)
     canal_txt.grid(column=1, row=3)
 
 
-    ramais_lbl = Label(window, text="Ramais")
+    ramais_lbl = Label(window, text="Ramais", background = '#335469', foreground = "white")
     ramais_lbl.grid(column=0, row=4)
     ramais_default_text = StringVar(window, value='2')
     ramais_txt = Entry(window,width=30, textvariable=ramais_default_text)
     ramais_txt.grid(column=1, row=4)
 
 
-    km_de_conduta_lbl = Label(window, text="Km de conduta")
+    km_de_conduta_lbl = Label(window, text="Km de conduta", background = '#335469', foreground = "white")
     km_de_conduta_lbl.grid(column=0, row=5)
     km_de_conduta_default_text = StringVar(window, value='10')
     km_de_conduta_txt = Entry(window,width=30, textvariable=km_de_conduta_default_text)
     km_de_conduta_txt.grid(column=1, row=5)
 
 
-    btn = Button(window, text="Generate", command=lambda:generate(csvPath_txt.get(),entidade_txt.get(), local_txt.get(),canal_txt.get(), int(ramais_txt.get()),int(km_de_conduta_txt.get())))
+    btn = Button(window, text="Generate", command=lambda:generate(csvPath_txt.get(),entidade_txt.get(), local_txt.get(),canal_txt.get(), ramais_txt.get(),km_de_conduta_txt.get()))
     btn.grid(column=2, row=5)
     
     window.protocol("WM_DELETE_WINDOW", on_closing)
+    window.configure(background='#335469')
     window.mainloop()
 
 def on_closing():
@@ -745,10 +742,16 @@ def generate(_csvPath,_entidade, _local, _canal, _ramais, _km_de_conduta):
     canal=_canal
     
     global ramais
-    ramais=_ramais
     
     global km_de_conduta
-    km_de_conduta=_km_de_conduta
+    
+    if _ramais=="" or _km_de_conduta=="":
+       ramais=0
+       km_de_conduta=0
+    else:
+       ramais=int(_ramais)
+       km_de_conduta=int(_km_de_conduta)
+    
     
     if csvPath=="" or entidade=="" or local=="" or canal=="":
          messagebox.showinfo("Error", "Fill in the mandatory fields")
@@ -773,13 +776,7 @@ def generate(_csvPath,_entidade, _local, _canal, _ramais, _km_de_conduta):
 
 if __name__ == "__main__":
     
-    #Init vars
-    csvPath="test3.csv"
-    entidade="Município de Penacova"
-    local="Reservatório da Aveleira "
-    canal="example canal"
-    ramais=0
-    km_de_conduta=0
+    
     detailed=False
     
     avg_data=PlotData([],[])
@@ -788,5 +785,4 @@ if __name__ == "__main__":
     pesquisa_ramais_data=PlotData([],[])
     pesquisa_km_data=PlotData([],[])
    
-    #main()
     showGUI()
