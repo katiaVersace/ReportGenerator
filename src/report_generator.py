@@ -41,13 +41,15 @@ def form_xo_reader(imgdata):
     page, = PdfReader(imgdata).pages
     return pagexobj(page)
 
-def first_page(canvas, doc):
+def first_page_simple(canvas, doc):
     laters_page(canvas, doc)
     canvas.setLineWidth(2)
-    if ramais==0:
-        canvas.line(30,718,560,718)
-    else:
-        canvas.line(30,790,560,790)
+    canvas.line(30,718,560,718)
+        
+def first_page_detailed(canvas, doc):
+    laters_page(canvas, doc)
+    canvas.setLineWidth(2)
+    canvas.line(30,790,560,790)
 
 def laters_page(canvas, doc):
     """
@@ -110,21 +112,14 @@ class PdfImage(Flowable):
 
 
     
-def readCsv(path):
+def readCsv(path, avg_data, min_data, search_factor_data, detailed, ramais, km_de_conduta, pesquisa_ramais_data, pesquisa_km_data):
     """
     This method open the csv file and take the first date. For each row in the csv file, until the date is the same
     it sums the flow and calculate the minimum flow. When the date is new or the file ends, it calculate the average flow for that date.
     All this data for each date are kept in 5 PlotData each for every line in the plots.
     """
     
-    global avg_data
-    global min_data
-    global search_factor_data
-    global detailed
-    global ramais
-    global km_de_conduta
-    global pesquisa_ramais_data   
-    global pesquisa_km_data
+
     
     
     data = pandas.read_csv(path, delimiter=';', decimal=',',skiprows=2)
@@ -206,19 +201,13 @@ def readCsv(path):
         pesquisa_ramais_data=PlotData(x_pesquisa_ramais_data,y_pesquisa_ramais_data)
         pesquisa_km_data=PlotData(x_pesquisa_km_data,y_pesquisa_km_data)
     
-   
-
+    return avg_data, min_data, search_factor_data, pesquisa_ramais_data, pesquisa_km_data
     
-def make_plot1(use_pdfrw):
+    
+def make_plot1(use_pdfrw, avg_data, min_data, plt, detailed):
     """
     This method plots the data about the average flow (blue) and the minimum flow (green). This is the first plot of the document
     """
-    
-    global avg_data
-    global min_data
-    global plt
-    global detailed
-    
     width_img=19
     height_img=6
     if detailed:
@@ -267,15 +256,12 @@ def make_plot1(use_pdfrw):
     return img
     
 
-def make_plot2(use_pdfrw):
+def make_plot2(use_pdfrw, search_factor_data, plt, detailed):
     """
     This method plots the data about the Search Factor. This is the second plot of the document. If the document is detailed
     this plot will be smaller
     """
-    
-    global search_factor_data
-    global plt
-    global detailed
+
     
     width_img=19
     height_img=6
@@ -319,14 +305,11 @@ def make_plot2(use_pdfrw):
     return img
 
 
-def make_plot3(use_pdfrw):
+def make_plot3(use_pdfrw, pesquisa_ramais_data, plt):
     """
     This method plots the data about the Potencial de pesquisa por número de ramais. This is the third plot of the document.
     """
-    
-    global pesquisa_ramais_data
-    global plt
-    
+     
     fig = plt.figure(figsize=(13,4))
     plt.plot( pesquisa_ramais_data.xAxis,pesquisa_ramais_data.yAxis, color='#335469', linewidth=6, label='Potencial de pesquisa')
     plt.xlabel('DIA')
@@ -363,14 +346,11 @@ def make_plot3(use_pdfrw):
     img = PdfImage(image, width=ceil(13*test_scale), height=ceil(4*test_scale), hAlign=TA_CENTER)
     return img
 
-def make_plot4(use_pdfrw):
+def make_plot4(use_pdfrw, pesquisa_km_data, plt):
     """
     This method plots the data about the Potencial de pesquisa por km de conduta. This is the fourth and last plot of the document.
     """
-    
-    global pesquisa_km_data
-    global plt
-    
+ 
     fig = plt.figure(figsize=(13,4))
     plt.plot( pesquisa_km_data.xAxis,pesquisa_km_data.yAxis, color='#B9D484', linewidth=6, label='Potencial de pesquisa')
     plt.xlabel('DIA')
@@ -407,18 +387,11 @@ def make_plot4(use_pdfrw):
     img = PdfImage(image, width=ceil(13*test_scale), height=ceil(4*test_scale), hAlign=TA_CENTER)
     return img
 
-def make_simple_report(outfn,use_pdfrw):
+def make_simple_report(outfn,use_pdfrw, entidade, local,canal, avg_data, min_data, search_factor_data):
     """
     This method builds a simple report. 
     """  
-    
-    global entidade
-    global local
-    global canal
-    global avg_data
-    global min_data
-    global search_factor_data
-    
+
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
     style_right = ParagraphStyle(name='right', parent=styles['Normal'], alignment=TA_RIGHT)
@@ -442,14 +415,14 @@ def make_simple_report(outfn,use_pdfrw):
     story.append(Paragraph('<b>Evolução dos caudais mínimos noturno e médios diários </b>', styles["Normal"]))
     story.append(Spacer(1, 0.2 * inch))
      
-    plot1= make_plot1(use_pdfrw)
+    plot1= make_plot1(use_pdfrw, avg_data, min_data, plt, False)
     story.append(plot1)
     story.append(Spacer(1, 0.2 * inch))
     
     story.append(Paragraph('<b>Fator de Pesquisa</b>', styles["Normal"]))
     story.append(Spacer(1, 0.2 * inch))
     
-    plot2=make_plot2(use_pdfrw)
+    plot2=make_plot2(use_pdfrw,  search_factor_data, plt, False)
     story.append(plot2)
     story.append(Spacer(1, 0.2 * inch))
     
@@ -502,26 +475,17 @@ def make_simple_report(outfn,use_pdfrw):
                        ('VALIGN', (0,0), (0,0), 'MIDDLE'),]))
     story.append(table2)
 
-    doc.build(story, onFirstPage=first_page, onLaterPages=laters_page)
+    doc.build(story, onFirstPage=first_page_simple, onLaterPages=laters_page)
     
 
     
     
 
-def make_detailed_report(outfn,use_pdfrw):
+def make_detailed_report(outfn,use_pdfrw, entidade, local,canal, avg_data, min_data, search_factor_data,pesquisa_ramais_data, pesquisa_km_data, ramais, km_de_conduta):
     """
     This method builds a detailed report.
     """
-    
-    global entidade
-    global local
-    global canal
-    global avg_data
-    global min_data
-    global search_factor_data
-    global ramais
-    global km_de_conduta
-    global detailed
+   
     
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
@@ -554,7 +518,7 @@ def make_detailed_report(outfn,use_pdfrw):
     story.append(Paragraph('<b>Evolução dos caudais mínimos noturno e médios diários </b>', styles["Normal"]))
     story.append(Spacer(1, 0.2 * inch))
       
-    plot1= make_plot1(use_pdfrw)
+    plot1= make_plot1(use_pdfrw, avg_data, min_data, plt, True)
     plot1.hAlign="LEFT"
     story.append(plot1)
     story.append(Spacer(1, 0.2 * inch))
@@ -596,7 +560,7 @@ def make_detailed_report(outfn,use_pdfrw):
     style1 = TableStyle([ ('VALIGN', (1, 0), (-1, -1), "CENTER")                                  
                        ])
     
-    plot2=make_plot2(use_pdfrw)
+    plot2=make_plot2(use_pdfrw, search_factor_data, plt, True)
     table1_data.append([plot2,reference_values_table])
     
     table1=Table(table1_data,[11*cm,5*cm])
@@ -607,7 +571,7 @@ def make_detailed_report(outfn,use_pdfrw):
     #table2 contains on left the plot about Potencial de pesquisa por número de ramais, on right the number of ramais
     table2_data=[]
     table2_data.append([Paragraph('<b>Potencial de pesquisa por número de ramais </b>', styles["Normal"]),Paragraph('<b> Número de ramais</b>',style_right)])
-    plot3=make_plot3(use_pdfrw)
+    plot3=make_plot3(use_pdfrw, pesquisa_ramais_data, plt)
     plot3.hAlign="LEFT"
     
     table2_data.append([plot3,Paragraph(str(ramais), style_bordered)])
@@ -623,7 +587,7 @@ def make_detailed_report(outfn,use_pdfrw):
     #table3 contains on left the plot about Potencial de pesquisa por km de conduta, on right the number of km de conduta
     table3_data=[]
     table3_data.append([Paragraph('<b>Potencial de pesquisa por km de conduta</b>', styles["Normal"]),Paragraph('<b>Quilómetros de conduta</b>',style_right)])
-    plot4=make_plot4(use_pdfrw)
+    plot4=make_plot4(use_pdfrw, pesquisa_km_data, plt)
     plot4.hAlign="LEFT"
     
     table3_data.append([plot4,Paragraph(str(km_de_conduta), style_bordered)])
@@ -644,7 +608,7 @@ def make_detailed_report(outfn,use_pdfrw):
                        ('VALIGN', (0,0), (0,0), 'MIDDLE'),]))
     story.append(table4)
 
-    doc.build(story, onFirstPage=first_page, onLaterPages=laters_page)
+    doc.build(story, onFirstPage=first_page_detailed, onLaterPages=laters_page)
     
 
 
@@ -726,25 +690,15 @@ def OpenFile(csv_path_txt):
     
     
 
-def generate(_csvPath,_entidade, _local, _canal, _ramais, _km_de_conduta):
-    global detailed
-    
-    global csvPath
-    csvPath=_csvPath
-    
-    global entidade
-    entidade=_entidade
-    
-    global local
-    local=_local
-    
-    global canal
-    canal=_canal
-    
-    global ramais
-    
-    global km_de_conduta
-    
+def generate(csvPath,entidade, local, canal, _ramais, _km_de_conduta):
+    detailed=False
+    avg_data=PlotData([],[])
+    min_data=PlotData([],[])
+    search_factor_data=PlotData([],[])
+    pesquisa_ramais_data=PlotData([],[])
+    pesquisa_km_data=PlotData([],[])
+        
+       
     if _ramais=="" or _km_de_conduta=="":
        ramais=0
        km_de_conduta=0
@@ -759,15 +713,15 @@ def generate(_csvPath,_entidade, _local, _canal, _ramais, _km_de_conduta):
         if os.path.exists(csvPath):
                     
              if ramais==0 or km_de_conduta==0:
-                 readCsv(csvPath)
-                 make_simple_report("Relatório_semanal_"+entidade+"_pdf.pdf",True)
-                 make_simple_report("Relatório_semanal_"+entidade+"_png.pdf",False)
+                 avg_data, min_data, search_factor_data, pesquisa_ramais_data, pesquisa_km_data=readCsv(csvPath,  avg_data, min_data, search_factor_data, detailed, ramais, km_de_conduta, pesquisa_ramais_data, pesquisa_km_data)
+                 make_simple_report("Relatório_semanal_"+entidade+"_pdf.pdf",True, entidade, local,canal, avg_data, min_data, search_factor_data)
+                 make_simple_report("Relatório_semanal_"+entidade+"_png.pdf",False, entidade, local,canal, avg_data, min_data, search_factor_data)
         
              else:
                 detailed=True
-                readCsv(csvPath)
-                make_detailed_report("Relatório_semanal_"+entidade+"_pdf.pdf",True)
-                make_detailed_report("Relatório_semanal_"+entidade+"_png.pdf",False)
+                avg_data, min_data, search_factor_data, pesquisa_ramais_data, pesquisa_km_data=readCsv(csvPath,  avg_data, min_data, search_factor_data, detailed, ramais, km_de_conduta, pesquisa_ramais_data, pesquisa_km_data)
+                make_detailed_report("Relatório_semanal_"+entidade+"_pdf.pdf",True, entidade, local,canal, avg_data, min_data, search_factor_data,pesquisa_ramais_data,pesquisa_km_data, ramais, km_de_conduta)
+                make_detailed_report("Relatório_semanal_"+entidade+"_png.pdf",False, entidade, local,canal, avg_data, min_data, search_factor_data, pesquisa_ramais_data, pesquisa_km_data,ramais, km_de_conduta)
         
              subprocess.Popen(["Relatório_semanal_"+entidade+"_pdf.pdf"], shell=True)
         else:
@@ -775,14 +729,6 @@ def generate(_csvPath,_entidade, _local, _canal, _ramais, _km_de_conduta):
 
 
 if __name__ == "__main__":
-    
-    
-    detailed=False
-    
-    avg_data=PlotData([],[])
-    min_data=PlotData([],[])
-    search_factor_data=PlotData([],[])
-    pesquisa_ramais_data=PlotData([],[])
-    pesquisa_km_data=PlotData([],[])
+   
    
     showGUI()
